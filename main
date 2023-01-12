@@ -1,0 +1,39 @@
+from opennmt import tokenizers
+from opennmt import models
+from opennmt import optimizers
+from opennmt import inputters
+from opennmt import trainers
+
+# Define the source and target languages
+source_language = "en"
+target_language = "fr"
+
+# Tokenize the data
+tokenizer = tokenizers.new("space", source_language, target_language)
+
+# Define the model architecture
+model = models.Transformer(
+    source_vocab_size=tokenizer.vocab_size[source_language],
+    target_vocab_size=tokenizer.vocab_size[target_language])
+
+# Define the optimizer
+optimizer = optimizers.Adam(alpha=0.001)
+
+# Define the input pipeline
+inputter = inputters.ParallelInputter(
+    {"source": inputters.WordEmbedder(embedding_size=512),
+     "target": inputters.WordEmbedder(embedding_size=512)},
+    {"source": inputters.WordEmbedder(embedding_size=512),
+     "target": inputters.WordEmbedder(embedding_size=512)})
+
+# Define the trainer
+trainer = trainers.Trainer(
+    model=model,
+    optimizer=optimizer,
+    inputter=inputter,
+    tokenizer=tokenizer,
+    save_checkpoint_steps=1000,
+    train_steps=10000)
+
+# Start training
+trainer.train(["train.en", "train.fr"], ["valid.en", "valid.fr"])
